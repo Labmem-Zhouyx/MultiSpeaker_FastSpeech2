@@ -27,7 +27,7 @@ class Dataset(Dataset):
             self.speaker_map = json.load(f)
         self.sort = sort
         self.drop_last = drop_last
-        self.shuffle_refmel = train_config["dataset"]["shuffle_refmel"]
+        self.random_refmel = train_config["dataset"]["random_refmel"]
 
     def __len__(self):
         return len(self.text)
@@ -62,7 +62,10 @@ class Dataset(Dataset):
             "{}-duration-{}.npy".format(speaker, basename),
         )
         duration = np.load(duration_path)
-        ref_mel = self.get_reference(mel, duration)
+        if self.random_refmel:
+            ref_mel = self.get_random_reference(speaker)
+        else:
+            ref_mel = mel
 
         sample = {
             "id": basename,
@@ -78,25 +81,18 @@ class Dataset(Dataset):
 
         return sample
 
-    def get_reference(self, mel, duration):
-        mel_slices = []
-        start = 0
-        for i in range(duration.shape[0]):
-            mel_slices.append(mel[start: start + duration[i]])
-            start += duration[i]
-
-        # random shuffle by phoneme duration
-        if self.shuffle_refmel:
-            index = list(range(duration.shape[0]))
-            random.shuffle(index)
-            mel_slices_shuffle = []
-            for i in index:
-                mel_slices_shuffle.append(mel_slices[i])
-            mel_post = np.concatenate(mel_slices_shuffle)
-        else:
-            mel_post = np.concatenate(mel_slices)
-
-        return mel_post
+    def get_random_reference(self, speaker):
+        ref_mel = None
+        while ref_mel is None:
+            basename = speaker + str(random.randint(0, 500)).zfill(4)
+            ref_mel_path = os.path.join(
+                self.preprocessed_path,
+                "mel",
+                "{}-mel-{}.npy".format(speaker, basename),
+            )
+            if os.path.exists(ref_mel_path):
+                ref_mel = np.load(ref_mel_path)
+        return ref_mel
 
     def process_meta(self, filename):
         with open(

@@ -23,7 +23,7 @@ class SpeakerEncoder(nn.Module):
 
 
 class NormalEncoder(nn.Module):
-    def __init__(self, in_dim=80, conv_channels=[512, 512], kernel_size=5, stride=1, padding=2, dropout=0.5, out_dim=256):
+    def __init__(self, in_dim=80, conv_channels=[512, 512], kernel_size=5, stride=1, padding=2, dropout=0.2, out_dim=256):
         super(NormalEncoder, self).__init__()
 
         # convolution layers followed by batch normalization and ReLU activation
